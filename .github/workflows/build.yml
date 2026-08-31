@@ -41,7 +41,6 @@ jobs:
 
       - name: Retrieve and Decrypt Firmware
         run: |
-          echo "Fetching target SM-A346E (INS) base firmware..."
           for i in {1..3}; do
             if samloader download -m SM-A346E -r INS -o decrypted_firmware.zip; then
               break
@@ -207,4 +206,4 @@ jobs:
             dtbo.img
             vbmeta_disabled.tar
           draft: false
-          prerelease: true
+          prerelease: false
