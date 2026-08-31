@@ -60,7 +60,7 @@ jobs:
         run: |
           if [ -z "${{ inputs.firmware_version }}" ]; then
             echo "No firmware string provided. Fetching latest for ${{ inputs.model }} (${{ inputs.region }})..."
-            FW_VER=$(samloader checkupdate -m ${{ inputs.model }} -r ${{ inputs.region }})
+            FW_VER=$(samloader check-update -m ${{ inputs.model }} -r ${{ inputs.region }})
             echo "FIRMWARE_VERSION=$FW_VER" >> $GITHUB_ENV
           else
             echo "FIRMWARE_VERSION=${{ inputs.firmware_version }}" >> $GITHUB_ENV
@@ -222,12 +222,11 @@ jobs:
           tag_name: "A34_ONEUI8_UNIFIED_${{ github.run_id }}"
           name: "Galaxy A34 Unified Stack (Base: ${{ inputs.model }} - ${{ inputs.region }})"
           body: |
-            ### Build Information
-            - **Device Model:** `${{ inputs.model }}`
-            - **Region (CSC):** `${{ inputs.region }}`
-            - **Firmware Base:** `${{ env.FIRMWARE_VERSION }}`
+            Build Information
+            - Device Model: ${{ inputs.model }}
+            - Region (CSC): ${{ inputs.region }}
+            - Firmware Base: ${{ env.FIRMWARE_VERSION }}
             
-            This release contains the unified Multi-TEE patched `vendor.img` and the cleanly extracted accompanying hardware partition images natively pulled from the firmware specified above.
           fail_on_unmatched_files: false
           files: |
             vendor.img
