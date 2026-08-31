@@ -31,6 +31,7 @@ jobs:
 
       - name: Install Rust Samloader & lpunpack
         run: |
+          # FIXED: Pointing to the specific v2.0.0 release asset
           wget -q https://github.com/topjohnwu/samloader-rs/releases/download/2.0.0/samloader-v2.0.0-linux-x86_64.tar.xz
           tar -xf samloader-v2.0.0-linux-x86_64.tar.xz
           sudo mv samloader /usr/local/bin/samloader
@@ -41,6 +42,7 @@ jobs:
 
       - name: Retrieve and Decrypt Firmware
         run: |
+          echo "Fetching target SM-A346E (INS) base firmware..."
           for i in {1..3}; do
             if samloader download -m SM-A346E -r INS -o decrypted_firmware.zip; then
               break
@@ -74,9 +76,10 @@ jobs:
             mv super.img super_raw.img
           fi
 
-      - name: Unpack Logical Partitions
+      - name: Unpack & Isolate Untouched Logical Partitions
         run: |
           mkdir extracted_super
+          # Extracting all requested logical partitions from the base super image
           python3 /usr/local/bin/lpunpack.py -p vendor super_raw.img extracted_super
           python3 /usr/local/bin/lpunpack.py -p vendor_dlkm super_raw.img extracted_super
           python3 /usr/local/bin/lpunpack.py -p odm super_raw.img extracted_super
@@ -85,6 +88,7 @@ jobs:
           
           rm super_raw.img
           
+          # Unsparse the extracted partitions so they are ready to flash (no modification to contents)
           for part in vendor vendor_dlkm odm system_dlkm odm_dlkm; do
             if [ -f "extracted_super/${part}.img" ]; then
               if file "extracted_super/${part}.img" | grep -q "sparse"; then
@@ -95,6 +99,7 @@ jobs:
             fi
           done
           
+          # Finalize the untouched images exactly as requested
           [ -f vendor_dlkm_raw.img ] && mv vendor_dlkm_raw.img vendor_dlkm.img
           [ -f odm_raw.img ] && mv odm_raw.img odm.img
           [ -f system_dlkm_raw.img ] && mv system_dlkm_raw.img system_dlkm.img
@@ -117,6 +122,7 @@ jobs:
       - name: Build Unified Patched Vendor Image
         run: |
           mkdir vendor_mount vendor_tree
+          # Only vendor_raw.img gets mounted and modified
           sudo mount -o ro vendor_raw.img vendor_mount
           
           sudo find vendor_mount | sudo xargs -I "{}" -P "$(nproc)" sh -c 'echo "$1 $(getfattr -n security.selinux --only-values -h --absolute-names "$1" 2>/dev/null || echo "u:object_r:vendor_file:s0")"' sh "{}" > file_context.txt
@@ -184,6 +190,7 @@ jobs:
 
       - name: Rebuild Partition Images
         run: |
+          # Only vendor is repacked. The others remain exactly as they were extracted from the stock firmware.
           sudo mkfs.erofs -z "lz4hc,9" -b 4096 --mount-point "/vendor" --file-contexts file_context.txt vendor.img vendor_tree/
 
       - name: Publish to Unified GitHub Release
