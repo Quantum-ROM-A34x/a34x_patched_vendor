@@ -59,7 +59,6 @@ jobs:
         id: resolve_fw
         run: |
           if [ -z "${{ inputs.firmware_version }}" ]; then
-            echo "No firmware string provided. Fetching latest for ${{ inputs.model }} (${{ inputs.region }})..."
             FW_VER=$(samloader check-update -m ${{ inputs.model }} -r ${{ inputs.region }})
             echo "FIRMWARE_VERSION=$FW_VER" >> $GITHUB_ENV
           else
@@ -68,7 +67,6 @@ jobs:
 
       - name: Retrieve and Decrypt Firmware
         run: |
-          echo "Target Firmware: $FIRMWARE_VERSION"
           for i in {1..3}; do
             if samloader download -m ${{ inputs.model }} -r ${{ inputs.region }} -v $FIRMWARE_VERSION -o decrypted_firmware.zip; then
               break
@@ -165,13 +163,33 @@ jobs:
           cat << 'EOF' | sudo tee vendor_tree/etc/init/tee_blobs.rc
           on early-fs && property:ro.boot.em.model=SM-A346E
               mount none /vendor/tee_sea /vendor/tee bind
+          on early-fs && property:ro.boot.em.model=A346E
+              mount none /vendor/tee_sea /vendor/tee bind
+          on early-fs && property:ro.product.vendor.model=SM-A346E
+              mount none /vendor/tee_sea /vendor/tee bind
           on early-fs && property:ro.boot.em.model=SM-A346B
+              mount none /vendor/tee_eea /vendor/tee bind
+          on early-fs && property:ro.boot.em.model=A346B
+              mount none /vendor/tee_eea /vendor/tee bind
+          on early-fs && property:ro.product.vendor.model=SM-A346B
               mount none /vendor/tee_eea /vendor/tee bind
           on early-fs && property:ro.boot.em.model=SM-A346M
               mount none /vendor/tee_latam /vendor/tee bind
+          on early-fs && property:ro.boot.em.model=A346M
+              mount none /vendor/tee_latam /vendor/tee bind
+          on early-fs && property:ro.product.vendor.model=SM-A346M
+              mount none /vendor/tee_latam /vendor/tee bind
           on early-fs && property:ro.boot.em.model=SM-A3460
               mount none /vendor/tee_chn /vendor/tee bind
+          on early-fs && property:ro.boot.em.model=A3460
+              mount none /vendor/tee_chn /vendor/tee bind
+          on early-fs && property:ro.product.vendor.model=SM-A3460
+              mount none /vendor/tee_chn /vendor/tee bind
           on early-fs && property:ro.boot.em.model=SM-A346N
+              mount none /vendor/tee_kor /vendor/tee bind
+          on early-fs && property:ro.boot.em.model=A346N
+              mount none /vendor/tee_kor /vendor/tee bind
+          on early-fs && property:ro.product.vendor.model=SM-A346N
               mount none /vendor/tee_kor /vendor/tee bind
           EOF
 
