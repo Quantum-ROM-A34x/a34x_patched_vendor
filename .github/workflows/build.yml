@@ -1,4 +1,4 @@
-name: Build Unified Multi-Variant ROM Stack
+name: Build Unified Multi-Variant ROM Stack 
 
 on:
   workflow_dispatch:
@@ -228,9 +228,6 @@ jobs:
           
           sudo bash -c "echo 'ro.vendor.multitee.supported_bootloaders=$SUPPORTED_BL' >> $PROP_FILE"
           sudo bash -c "echo 'ro.vendor.multitee.version=$TEE_VER' >> $PROP_FILE"
-          
-          sudo sed -i 's/fileencryption=[^,]*//g' vendor_tree/etc/fstab.* 2>/dev/null || true
-          sudo sed -i 's/metadata_encryption=[^,]*//g' vendor_tree/etc/fstab.* 2>/dev/null || true
 
       - name: Rebuild Partition Images
         run: |
