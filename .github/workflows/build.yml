@@ -1,4 +1,4 @@
-name: Build Unified Multi-Variant ROM Stack
+name: Build Unified Multi-Variant ROM Stack 
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ on:
       region:
         description: 'Base Region Code (e.g., INS)'
         required: true
-        default: 'INS'
+        default: 'XSG'
         type: string
       firmware_version:
         description: 'Full Firmware String (e.g., AP/CSC/CP/AP). Leave blank for latest.'
@@ -76,16 +76,17 @@ jobs:
 
       - name: Extract Core Partitions & Super Image
         run: |
-          unzip -q decrypted_firmware.zip "AP_*.tar.md5"
+          unzip -q decrypted_firmware.zip "AP_*.tar.md5" "BL_*.tar.md5"
           rm decrypted_firmware.zip
           
-          tar -xf AP_*.tar.md5 super.img.lz4 init_boot.img.lz4 dtbo.img.lz4 vendor_boot.img.lz4 boot.img.lz4 cam_vpu1-verified.img.lz4 cam_vpu2-verified.img.lz4 cam_vpu3-verified.img.lz4 || true
+          tar -xf AP_*.tar.md5 super.img.lz4 init_boot.img.lz4 dtbo.img.lz4 vendor_boot.img.lz4 boot.img.lz4 vbmeta_system.img.lz4 vbmeta_vendor.img.lz4 cam_vpu1-verified.img.lz4 cam_vpu2-verified.img.lz4 cam_vpu3-verified.img.lz4 || true
+          tar -xf BL_*.tar.md5 vbmeta.img.lz4 || true
           rm *.tar.md5
           
           lz4 -d super.img.lz4 super.img
           rm super.img.lz4
           
-          for img in boot init_boot vendor_boot dtbo cam_vpu1-verified cam_vpu2-verified cam_vpu3-verified; do
+          for img in boot init_boot vendor_boot dtbo vbmeta vbmeta_system vbmeta_vendor cam_vpu1-verified cam_vpu2-verified cam_vpu3-verified; do
             if [ -f "${img}.img.lz4" ]; then
               lz4 -d "${img}.img.lz4" "${img}.img"
               rm "${img}.img.lz4"
@@ -128,6 +129,20 @@ jobs:
           [ -f odm_raw.img ] && mv odm_raw.img odm.img
           [ -f system_dlkm_raw.img ] && mv system_dlkm_raw.img system_dlkm.img
           [ -f odm_dlkm_raw.img ] && mv odm_dlkm_raw.img odm_dlkm.img || true
+
+      - name: Patch VBMeta
+        run: |
+          cat << 'EOF' > patch_vbmeta.py
+          import sys, os
+          for path in sys.argv[1:]:
+              if os.path.exists(path):
+                  with open(path, 'rb+') as f:
+                      f.seek(120)
+                      f.write(b'\x03\x00\x00\x00')
+          EOF
+          python3 patch_vbmeta.py vbmeta.img vbmeta_system.img vbmeta_vendor.img
+          
+          [ -f vbmeta.img ] && tar -cvf vbmeta_disabled.tar vbmeta.img
 
       - name: Build Unified Patched Vendor Image
         run: |
@@ -245,5 +260,6 @@ jobs:
             cam_vpu1.img
             cam_vpu2.img
             cam_vpu3.img
+            vbmeta_disabled.tar
           draft: false
           prerelease: false
