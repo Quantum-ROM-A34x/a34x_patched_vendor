@@ -242,7 +242,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "A34_ONEUI8_UNIFIED_${{ github.run_id }}"
-          name: "Galaxy A34 Unified Stack (Base: ${{ inputs.model }} - ${{ inputs.region }})"
+          name: "Galaxy A34 Unified Stack (Base: ${{ inputs.model }} - ${{ inputs.region }}) Test Release"
           body: |
             Build Information
             - Device Model: ${{ inputs.model }}
